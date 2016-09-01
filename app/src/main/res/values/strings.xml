@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">HelloBeacon</string>
+    <string name="listening_for_beacons">Listening for beacons …</string>
+    <string name="ble_not_supported">Bluetooth BLE is not supported</string>
+    <string name="ble_not_activated">Bluetooth is not activated. Please activate bluetooth and restart the app !</string>
+</resources>
