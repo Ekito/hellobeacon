@@ -22,6 +22,7 @@ import com.gimbal.android.PlaceEventListener;
 import com.gimbal.android.PlaceManager;
 import com.gimbal.android.Visit;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,6 +34,9 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_ENABLE_BT = 1;
+    // constante RSSI mesuréee à 1m
+    public static final int TX_POWER = -60;
+
     private PlaceManager placeManager;
     private PlaceEventListener placeEventListener;
     private Map<String, BeaconSighting> data = new HashMap<>();
@@ -106,6 +110,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    protected static double calculateAccuracy(int txPower, double rssi) {
+        if (rssi == 0) {
+            return -1.0; // if we cannot determine accuracy, return -1.
+        }
+
+        double ratio = rssi*1.0/txPower;
+        if (ratio < 1.0) {
+            return Math.pow(ratio,10);
+        }
+        else {
+            double accuracy =  (0.89976)*Math.pow(ratio,7.7095) + 0.111;
+            return accuracy;
+        }
+    }
+
     private List<String> asString(Collection<BeaconSighting> v) {
         List<BeaconSighting> values = new ArrayList<>(v);
         Collections.sort(values, new Comparator<BeaconSighting>() {
@@ -117,17 +136,21 @@ public class MainActivity extends AppCompatActivity {
         List<String> list = new ArrayList<>();
         for (BeaconSighting beaconSighting : values) {
             Beacon beacon = beaconSighting.getBeacon();
-            list.add("Name: " + beacon.getName() + " - ID:" + beacon.getIdentifier() + "\nRange: " + beaconSighting.getRSSI() + " ["+renderRange(beaconSighting.getRSSI())+"]");
+            double accuracy = calculateAccuracy(TX_POWER, beaconSighting.getRSSI());
+            DecimalFormat df = new DecimalFormat("#.00");
+            String format = String.format("Name:%S - ID:%s\nRange ~%sm (%sdb)", beacon.getName(), beacon.getIdentifier(), df.format(accuracy), beaconSighting.getRSSI());
+            list.add(format);
+//            list.add("Name: " + beacon.getName() + " - ID:" + beacon.getIdentifier() + "\nRange: " + beaconSighting.getRSSI() + "("+accuracy+")");
         }
         return list;
     }
 
-    private String renderRange(Integer rssi) {
-        if (rssi < -100) return "    ";
-        else if (rssi > -100 && rssi <= -80) return "+   ";
-        else if (rssi > -80 && rssi <= -55) return "++  ";
-        else if (rssi > -55 && rssi <= -35) return "+++ ";
-        else return "++++";
-    }
+//    private String renderRange(Integer rssi) {
+//        if (rssi < -100) return "    ";
+//        else if (rssi > -100 && rssi <= -80) return "+   ";
+//        else if (rssi > -80 && rssi <= -55) return "++  ";
+//        else if (rssi > -55 && rssi <= -35) return "+++ ";
+//        else return "++++";
+//    }
 
 }
